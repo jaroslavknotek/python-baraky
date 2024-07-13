@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools"] 
+
 build-backend = "setuptools.build_meta" 
 
 
@@ -81,6 +81,7 @@ package-data = {"sample" = ["*.dat"]}
 
 # pyproject.toml
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 minversion = "6.0"
 addopts = "-ra -q"
 testpaths = [
