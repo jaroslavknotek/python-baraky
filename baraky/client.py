@@ -3,14 +3,18 @@ import math
 import aiohttp
 import asyncio
 
-from typing import List
+from typing import List, Dict
+from baraky import settings
 
 logger = logging.getLogger("baraky.api")
 
 
 class SrealityEstatesClient:
-    def __init__(self, url_base="https://www.sreality.cz/api/cs/v2/"):
-        self.url_base = url_base
+    def __init__(self, base_url: str | None = None):
+        defaults = settings.SrealityClientSettings(
+            base_url=base_url,
+        )
+        self.base_url = defaults.base_url
 
     async def query(
         self,
@@ -34,12 +38,15 @@ class SrealityEstatesClient:
             page_1 = await self._read_page(
                 session, query_params, per_page=per_page, headers=headers
             )
-
+            if page_1 is None:
+                logger.warning("Failed to get first page of the query")
+                return []
             result_size = page_1["result_size"]
             pages_total = math.ceil(result_size / per_page) + 1
-            print(pages_total)
             tasks = []
             for page in range(2, pages_total):
+                if page is None:
+                    continue
                 task = self._read_page(
                     session, query_params, page=page, per_page=per_page
                 )
@@ -75,7 +82,7 @@ class SrealityEstatesClient:
             return await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _detail_with_session(self, session, id: int) -> dict:
-        url = format_url(self.url_base, f"estates/{id}")
+        url = format_url(self.base_url, f"estates/{id}")
         return await _request_json(session, url)
 
     async def _read_page(
@@ -87,11 +94,11 @@ class SrealityEstatesClient:
         headers: dict = {},
     ) -> dict:
         paged_query = page_query(query_params, page, per_page)
-        url = format_url(self.url_base, "estates", paged_query)
+        url = format_url(self.base_url, "estates", paged_query)
         return await _request_json(session, url, headers=headers)
 
 
-async def _request_json(session, url, method="get", headers={}):
+async def _request_json(session, url, method="get", headers={}) -> Dict | None:
     if "User-Agent" not in headers:
         # Sreality returns random area and price if the user agent is not set
         headers["User-Agent"] = (

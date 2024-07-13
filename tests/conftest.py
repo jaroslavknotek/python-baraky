@@ -12,5 +12,5 @@ async def _fix_dummy_server(aiohttp_server):
 
 @pytest.fixture(name="estates_client")
 async def _fix_estates_client(dummy_server):
-    url = dummy_server.make_url("/")
-    return SrealityEstatesClient(url_base=url)
+    url = str(dummy_server.make_url("/"))
+    return SrealityEstatesClient(base_url=url)
