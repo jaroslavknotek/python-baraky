@@ -26,18 +26,24 @@ class DeterministicCycleTimer:
 
 
 class MockClient:
+    data = []
+
     async def read_all(self):
-        return []
+        return self.data
 
 
 class MockStorage:
+    data = []
+
     async def get_ids(self):
-        return []
+        return [record.id for record in self.data]
 
     async def save(self, estates):
-        pass
+        self.data.extend(estates)
 
 
 class MockQueue:
+    data = []
+
     def put(self, estate):
-        pass
+        self.data.append(estate)
