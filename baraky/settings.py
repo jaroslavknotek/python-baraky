@@ -25,6 +25,7 @@ class MyInitSettingsSource(InitSettingsSource):
 class SrealityClientSettings(BaseSettings):
     model_config = SettingsConfigDict()
     base_url: AnyUrl = "https://www.sreality.cz/api/cs/v2/"
+    detail_url: AnyUrl = "https://www.sreality.cz/detail/prodej/dum/rodinny/"
     per_page: int = 100
 
     @classmethod
