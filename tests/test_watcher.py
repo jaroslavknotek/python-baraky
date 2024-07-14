@@ -9,10 +9,20 @@ async def test_watcher_update_cycle(watcher):
     client = watcher.client
 
     stored_estates = [
-        EstateOverview(id="1", price=1000, link="https://www.example.com/1", gps=(1, 1))
+        EstateOverview(
+            id="1",
+            price=1000,
+            link="https://www.example.com/1",
+            gps=(1, 1),
+        )
     ]
     new_estates = [
-        EstateOverview(id="2", price=2000, link="https://www.example.com/2", gps=(2, 2))
+        EstateOverview(
+            id="2",
+            price=2000,
+            link="https://www.example.com/2",
+            gps=(2, 2),
+        )
     ]
     storage.data = stored_estates
     client.data = new_estates

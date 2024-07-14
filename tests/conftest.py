@@ -3,8 +3,15 @@ from .dummy_server import create_dummy_server
 from baraky.client import SrealityEstatesClient
 from baraky.estate_watcher import EstateWatcher
 from . import models
+from baraky.storages import FileSystemStorage
 
 pytest_plugins = ("pytest_asyncio",)
+
+
+@pytest.fixture(name="fs_storage")
+def _fix_fs_storage(tmp_path):
+    tmp_storage = tmp_path / "test_storage"
+    return FileSystemStorage(tmp_storage)
 
 
 @pytest.fixture(name="watcher")
