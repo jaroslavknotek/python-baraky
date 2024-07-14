@@ -1,11 +1,11 @@
 [build-system]
-
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta" 
 
 
 [project]
 name = "python-baraky" 
-version = "3.0.0"  
+version = "0.0.1"  
 
 description = "A simple python project to read estates from sreality.cz"
 
@@ -46,7 +46,11 @@ classifiers = [
 dependencies = [
   "aiohttp",
   "pydantic",
-  "pydantic-settings"
+  "pydantic-settings",
+  "redis",
+  "aiofiles",
+  "tqdm",
+  "pika",
 ]
 
 # List additional groups of dependencies here (e.g. development

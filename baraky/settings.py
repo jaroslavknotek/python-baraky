@@ -25,6 +25,7 @@ class MyInitSettingsSource(InitSettingsSource):
 class SrealityClientSettings(BaseSettings):
     model_config = SettingsConfigDict()
     base_url: AnyUrl = "https://www.sreality.cz/api/cs/v2/"
+    per_page: int = 100
 
     @classmethod
     def settings_customise_sources(

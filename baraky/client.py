@@ -15,11 +15,12 @@ class SrealityEstatesClient:
             base_url=base_url,
         )
         self.base_url = defaults.base_url
+        self.per_page = defaults.per_page
 
     async def query(
         self,
         query_params=None,
-        per_page: int = 100,
+        per_page: int | None = None,
         headers: dict = {},
     ) -> List[dict]:
         """
@@ -33,10 +34,15 @@ class SrealityEstatesClient:
 
         if query_params is None:
             query_params = {}
+        per_page = per_page or self.per_page
 
         async with aiohttp.ClientSession() as session:
             page_1 = await self._read_page(
-                session, query_params, per_page=per_page, headers=headers
+                session,
+                query_params,
+                page=1,
+                per_page=per_page,
+                headers=headers,
             )
             if page_1 is None:
                 logger.warning("Failed to get first page of the query")
@@ -75,10 +81,7 @@ class SrealityEstatesClient:
         :return: list of estates
         """
         async with aiohttp.ClientSession() as session:
-            tasks = []
-            for id in ids:
-                task = self._detail_with_session(session, id)
-                tasks.append(task)
+            tasks = [self._detail_with_session(session, id) or id in ids]
             return await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _detail_with_session(self, session, id: int) -> dict:
@@ -89,8 +92,8 @@ class SrealityEstatesClient:
         self,
         session: aiohttp.ClientSession,
         query_params: dict,
-        page: int = 1,
-        per_page: int = 100,
+        page: int,
+        per_page: int,
         headers: dict = {},
     ) -> dict:
         paged_query = page_query(query_params, page, per_page)
