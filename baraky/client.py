@@ -67,11 +67,8 @@ class SrealityEstatesClient:
 
         valid = []
         for record in records:
-            record["price"] = _extract_price(record)
-            record["link"] = _extract_link(record, self.detail_url)
-            record["id"] = _extract_id(record)
             try:
-                estate_overview = EstateOverview.model_validate(record)
+                estate_overview = EstateOverview.from_record(record)
                 valid.append(estate_overview)
             except ValidationError:
                 logger.exception("Failed to validate estate %s", record)
@@ -141,30 +138,5 @@ def page_query(query_params, page, per_page):
     return query_params | {"per_page": per_page, "page": page}
 
 
-def parse_query_result_page(page_dict: dict):
+def parse_query_result_page(page_dict: dict) -> List[dict]:
     return page_dict.get("_embedded", {}).get("estates", [])
-
-
-def _extract_id(json_dict: dict):
-    path_part = json_dict.get("_links", {}).get("self", {}).get("href")
-    return path_part.split("/")[-1]
-
-
-def _extract_link(json_dict: dict, detail_url: str):
-    seo = json_dict["seo"]["locality"]
-    estate_id = _extract_id(json_dict)
-    return "{}/{}/{}".format(
-        detail_url,
-        seo,
-        estate_id,
-    )
-
-
-def _extract_gps(json_dict: dict):
-    lat = json_dict.get("gps", {}).get("lat")
-    lon = json_dict.get("gps", {}).get("lon")
-    return (lat, lon)
-
-
-def _extract_price(json_dict: dict):
-    return json_dict.get("price_czk", {}).get("value_raw")

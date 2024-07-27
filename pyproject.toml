@@ -51,6 +51,7 @@ dependencies = [
   "aiofiles",
   "tqdm",
   "pika",
+  "minio",
 ]
 
 # List additional groups of dependencies here (e.g. development

@@ -38,3 +38,13 @@ class SrealityClientSettings(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> Tuple[PydanticBaseSettingsSource, ...]:
         return (MyInitSettingsSource(settings_cls, init_settings.init_kwargs),)
+
+
+class MinioClientSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="MINIO_", extra="ignore"
+    )
+    endpoint: str = "localhost:9000"
+    bucket_name: str = "estates"
+    access_key: str
+    secret_key: str

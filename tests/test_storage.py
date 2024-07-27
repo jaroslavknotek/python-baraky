@@ -10,7 +10,7 @@ async def test_fs_storage_get_ids(fs_storage, monkeypatch):
 
     assert await fs_storage.get_ids() == []
 
-    def _patch_glob_files(_, __):
+    def _patch_glob_files(*args):
         return stored_paths
 
     monkeypatch.setattr(storages, "glob_files", _patch_glob_files)
