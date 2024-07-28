@@ -1,12 +1,13 @@
-import aiofiles
 import asyncio
 from pathlib import Path
 from baraky.models import EstateOverview
 from typing import List
+from tqdm.auto import tqdm
 import logging
 from minio import Minio
 from baraky.settings import MinioClientSettings
 import io
+import baraky.io as bio
 
 
 # Is using async over sync here a good idea?
@@ -34,7 +35,8 @@ class MinioStorage:
         return await loop.run_in_executor(None, self._get_ids_sync)
 
     def _save_sync(self, estates: List[EstateOverview]):
-        for estate in estates:
+        return
+        for estate in tqdm(estates, desc="Saving"):
             json_text = estate.model_dump_json()
             data_stream = io.BytesIO(json_text.encode("utf-8"))
             object_name = f"estate/house/{estate.id}.json"
@@ -59,20 +61,10 @@ class FileSystemStorage:
         self.root.mkdir(parents=True, exist_ok=True)
 
     async def get_ids(self):
-        file_names = glob_files(self.root, "*.json")
+        file_names = bio.glob_files(self.root, "*.json")
         return [file.stem for file in file_names]
 
     async def save(self, estates):
         for estate in estates:
             file_path = self.root / f"{estate.id}.json"
-            await write_model_json(file_path, estate)
-
-
-async def write_model_json(file_path, model):
-    json = model.model_dump_json()
-    async with aiofiles.async_open(file_path, "w") as afp:
-        await afp.write(json)
-
-
-def glob_files(file_path, glob_pattern):
-    return file_path.glob(glob_pattern)
+            await bio.write_model_json(file_path, estate)

@@ -48,3 +48,8 @@ class MinioClientSettings(BaseSettings):
     bucket_name: str = "estates"
     access_key: str
     secret_key: str
+
+
+class CommuteTimeFeatureSettings(BaseSettings):
+    model_config = SettingsConfigDict()
+    minutes_per_km: int = 2

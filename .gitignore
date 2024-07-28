@@ -162,6 +162,5 @@ cython_debug/
 #.idea/
 
 
-baraky-old
-baraky/prototypes
-
+stations.json
+query_params.json

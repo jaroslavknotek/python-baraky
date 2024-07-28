@@ -9,14 +9,14 @@ from baraky import settings
 from baraky.models import EstateOverview
 from pydantic import ValidationError
 
-logger = logging.getLogger("baraky.api")
+logger = logging.getLogger("baraky.client")
 
 
 class SrealityEstatesClient:
     def __init__(
         self,
         query_params,
-        headers: dict = {},
+        headers: Dict = {},
         base_url: str | None = None,
         detail_url: str | None = None,
     ):
@@ -60,15 +60,22 @@ class SrealityEstatesClient:
                     per_page=self.per_page,
                 )
                 tasks.append(task)
-        page_dicts = await asyncio.gather(*tasks, return_exceptions=True)
+
+            page_dicts = await asyncio.gather(*tasks, return_exceptions=True)
+
         page_dicts.insert(0, page_1)
         dicts_list = [parse_query_result_page(p) for p in page_dicts]
         records = sum(dicts_list, [])
+        return self._map_to_model(records)
 
+    def _map_to_model(self, records):
         valid = []
         for record in records:
             try:
-                estate_overview = EstateOverview.from_record(record)
+                estate_overview = EstateOverview.from_record(
+                    record,
+                    self.detail_url,
+                )
                 valid.append(estate_overview)
             except ValidationError:
                 logger.exception("Failed to validate estate %s", record)
@@ -96,7 +103,7 @@ class SrealityEstatesClient:
     #         tasks = [self._detail_with_session(session, id) or id in ids]
     #         return await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def _detail_with_session(self, session, id: int) -> dict:
+    async def _detail_with_session(self, session, id: int) -> Dict:
         url = format_url(self.base_url, f"estates/{id}")
         return await _request_json(session, url)
 
@@ -107,7 +114,7 @@ class SrealityEstatesClient:
         page: int,
         per_page: int,
         headers: dict = {},
-    ) -> dict:
+    ) -> Dict:
         paged_query = page_query(query_params, page, per_page)
         url = format_url(self.base_url, "estates", paged_query)
         return await _request_json(session, url, headers=headers)

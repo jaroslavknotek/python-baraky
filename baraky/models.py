@@ -1,6 +1,13 @@
 from pydantic import ConfigDict, BaseModel
+from typing import Any, Dict
 
 from typing import Tuple
+
+
+class CommuteTimeFeatures(BaseModel):
+    closest_place: str
+    km_to_closest: float
+    minutes_spent: float
 
 
 class EstateOverview(BaseModel, extra="allow"):
@@ -9,6 +16,7 @@ class EstateOverview(BaseModel, extra="allow"):
     price: int
     id: str
     gps: Tuple[float, float]
+    features: Dict[str, Any] = {}  # This is supposed to be mutable ATM
 
     @classmethod
     def from_record(cls, record: dict, detail_url: str):

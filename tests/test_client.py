@@ -27,7 +27,7 @@ async def test_estate_overview(estates_client, dummy_server):
             },
             "seo": {"locality": f"locality_{i}"},
             "price_czk": {"value_raw": i * 1000000},
-            "gps": (50.0, 14.0 + i),
+            "gps": {"lon": 50.0, "lat": 14.0 + i},
         }
         for i in range(10)
     ]

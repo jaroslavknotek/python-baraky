@@ -2,6 +2,9 @@ from datetime import timedelta, datetime
 import asyncio
 import logging
 
+from typing import Callable
+from baraky.models import EstateOverview
+
 logger = logging.getLogger("baraky.estate_watcher")
 
 
@@ -11,6 +14,8 @@ class EstateWatcher:
         client,
         storage,
         output_queue,
+        feature_calculators={},
+        filter_fn: Callable[EstateOverview, bool] | None = None,
         interval_sec=600,
     ):
         self.client = client
@@ -19,6 +24,8 @@ class EstateWatcher:
         interval = timedelta(seconds=interval_sec)
         self.timer = CycleTimer(interval)
         self.output_queue = output_queue
+        self.feature_calculators = feature_calculators
+        self.filter_fn = filter_fn or (lambda _: True)
 
     async def watch(self):
         while True:
@@ -42,16 +49,21 @@ class EstateWatcher:
         all_ids = {o.id: o for o in overviews}
         new_ids = set(list(all_ids.keys())) - set(existing_ids)
         new_raw_estates = [all_ids[id] for id in new_ids]
-        return self.enhance_estates(new_raw_estates)
+
+        self.enhance_estates(new_raw_estates)
+        return new_raw_estates
 
     def _notify(self, estates):
-        for estate in estates:
+        filtered = [e for e in estates if self.filter_fn(e)]
+        logger.info(f"Found {len(filtered)} new (filtered) estates")
+        for estate in filtered:
             self.output_queue.put(estate)
 
     def enhance_estates(self, estates):
-        # TODO: distance
-
-        return estates
+        for name, calculator in self.feature_calculators.items():
+            for estate in estates:
+                feature_data = calculator.calculate(estate)
+                estate.features[name] = feature_data
 
 
 class CycleTimer:

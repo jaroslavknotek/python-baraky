@@ -51,7 +51,9 @@ dependencies = [
   "aiofiles",
   "tqdm",
   "pika",
+  "geopy",
   "minio",
+  "numpy<2",
 ]
 
 # List additional groups of dependencies here (e.g. development
