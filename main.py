@@ -1,12 +1,12 @@
 import asyncio
-from baraky.estate_features import CommuteTimeFeature
+from baraky.estate_features import CommuteTimeFeature, PIDCommuteFeatureEnhancer
 import logging
 from baraky.storages import MinioStorage
 from baraky.estate_watcher import EstateWatcher
-from baraky.models import EstateOverview
+from baraky.models import EstateOverview, PIDCommuteFeature
 from baraky.client import SrealityEstatesClient
 import argparse
-
+from baraky.queues import RabbitQueueProducer
 import baraky.io as io
 
 logger = logging.getLogger("baraky")
@@ -31,42 +31,21 @@ def setup_args():
     return parser.parse_args()
 
 
-class StdOutQueue:
-    def put(self, estate):
-        print(
-            estate.price,
-            estate.link,
-            estate.features["commute_time"],
-        )
-
-
 def _filter_close_to_prague(
-    estate_overview: EstateOverview, commute_time: CommuteTimeFeature
-):
-    is_close = commute_time.km_to_closest < 30
-    is_prague = commute_time.closest_place == "Praha"
-
-    return is_close and is_prague and estate_overview.price < 10_000_000
-
-
-def _filter_close_to_any_station(
-    estate_overview: EstateOverview, commute_time: CommuteTimeFeature
-):
-    return commute_time.km_to_closest < 8 and estate_overview.price < 8_000_000
+    estate_overview: EstateOverview, commute_time: PIDCommuteFeature
+) -> bool:
+    if commute_time.time_minutes is None or commute_time.transfers_count is None:
+        return False
+    is_close = commute_time.time_minutes < 60
+    max_1_transfer = commute_time.transfers_count <= 1
+    return max_1_transfer and is_close and estate_overview.price < 10_000_000
 
 
-def _filter_fast_commuting(
-    estate_overview: EstateOverview, commute_time: CommuteTimeFeature
-):
-    return commute_time.minutes_spent < 75 and estate_overview.price < 6_000_000
-
-
-def filter(estate_overview: EstateOverview):
-    commute_time = estate_overview.features.get("commute_time")
-    close_to_prague = _filter_close_to_prague(estate_overview, commute_time)
-    close_to_any_station = _filter_close_to_any_station(estate_overview, commute_time)
-    fast_commuting = _filter_fast_commuting(estate_overview, commute_time)
-    return close_to_prague or close_to_any_station or fast_commuting
+def filter_fn(estate_overview: EstateOverview) -> bool:
+    commute_time = estate_overview.features.get("pid_commute_time")
+    if commute_time is None:
+        return False
+    return _filter_close_to_prague(estate_overview, commute_time)
 
 
 async def main():
@@ -79,13 +58,17 @@ async def main():
 
     minio_storage = MinioStorage()
 
-    feature_calculators = {"commute_time": CommuteTimeFeature(locations)}
+    feature_calculators = {
+        "commute_time": CommuteTimeFeature(locations),
+        "pid_commute_time": PIDCommuteFeatureEnhancer(),
+    }
+    queue = RabbitQueueProducer("estates_hits")
     watcher = EstateWatcher(
         client=client,
         storage=minio_storage,
-        output_queue=StdOutQueue(),
+        output_queue=queue,
         feature_calculators=feature_calculators,
-        filter_fn=filter,
+        filter_fn=filter_fn,
     )
 
     await watcher.update()

@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 import asyncio
 import logging
-
+from tqdm.auto import tqdm
 from typing import Callable
 from baraky.models import EstateOverview
 
@@ -15,8 +15,9 @@ class EstateWatcher:
         storage,
         output_queue,
         feature_calculators={},
-        filter_fn: Callable[EstateOverview, bool] | None = None,
+        filter_fn: Callable[[EstateOverview], bool] | None = None,
         interval_sec=600,
+        progress=True,
     ):
         self.client = client
         self.storage = storage
@@ -26,6 +27,7 @@ class EstateWatcher:
         self.output_queue = output_queue
         self.feature_calculators = feature_calculators
         self.filter_fn = filter_fn or (lambda _: True)
+        self.tqdm_disabled = not progress
 
     async def watch(self):
         while True:
@@ -50,7 +52,10 @@ class EstateWatcher:
         new_ids = set(list(all_ids.keys())) - set(existing_ids)
         new_raw_estates = [all_ids[id] for id in new_ids]
 
-        self.enhance_estates(new_raw_estates)
+        logger.debug(
+            "Found existing: %d new: %d", len(existing_ids), len(new_raw_estates)
+        )
+        await self.enhance_estates(new_raw_estates)
         return new_raw_estates
 
     def _notify(self, estates):
@@ -59,10 +64,15 @@ class EstateWatcher:
         for estate in filtered:
             self.output_queue.put(estate)
 
-    def enhance_estates(self, estates):
-        for name, calculator in self.feature_calculators.items():
-            for estate in estates:
-                feature_data = calculator.calculate(estate)
+    async def enhance_estates(self, estates):
+        logger.info(f"Enhancing {len(estates)} estates with features")
+
+        estates_it = tqdm(estates, desc="Enhancing estates", disable=self.tqdm_disabled)
+        for estate in estates_it:
+            for name, calculator in self.feature_calculators.items():
+                if name == "pid_commute_time":
+                    await asyncio.sleep(0.1)
+                feature_data = await calculator.calculate(estate)
                 estate.features[name] = feature_data
 
 

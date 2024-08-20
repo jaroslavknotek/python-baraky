@@ -3,6 +3,21 @@ from typing import Any, Dict
 
 from typing import Tuple
 
+Gps = Tuple[float, float]
+
+
+class PIDCommuteFeature(BaseModel):
+    time_minutes: int | None
+    transfers_count: int | None
+    from_station: str
+    to_station: str
+    gps_stop_distance: float
+
+
+class PIDResponse(BaseModel):
+    time_minutes: int
+    transfers_count: int
+
 
 class CommuteTimeFeatures(BaseModel):
     closest_place: str
@@ -25,6 +40,27 @@ class EstateOverview(BaseModel, extra="allow"):
             price=_extract_price(record),
             id=_extract_id(record),
             gps=_extract_gps(record),
+        )
+
+
+class EstateQueueMessage(BaseModel):
+    link: str
+    price: int
+    id: str
+    pid_commute_time_min: int
+    transfers_count: int
+    station_nearby: str
+
+    @classmethod
+    def map_from_estate_overview(cls, model: EstateOverview):
+        pid_commute_time = model.features.get("pid_commute_time")
+        return cls(
+            link=model.link,
+            price=model.price,
+            id=model.id,
+            pid_commute_time_min=pid_commute_time.time_minutes,
+            transfers_count=pid_commute_time.transfers_count,
+            station_nearby=pid_commute_time.from_station,
         )
 
 

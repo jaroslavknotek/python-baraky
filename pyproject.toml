@@ -54,6 +54,8 @@ dependencies = [
   "geopy",
   "minio",
   "numpy<2",
+  "scipy",
+  "pandas",
 ]
 
 # List additional groups of dependencies here (e.g. development
@@ -87,7 +89,7 @@ test = ["coverage"]
 # If there are data files included in your packages that need to be
 # installed, specify them here.
 package-data = {"sample" = ["*.dat"]}
-
+packages = ["baraky"]
 # pyproject.toml
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

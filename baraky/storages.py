@@ -9,6 +9,8 @@ from baraky.settings import MinioClientSettings
 import io
 import baraky.io as bio
 
+logger = logging.getLogger("baraky.storage.minio")
+
 
 # Is using async over sync here a good idea?
 class MinioStorage:
@@ -21,7 +23,6 @@ class MinioStorage:
             secure=False,  # TODO make sure to address this
         )
         self.bucket_name = settings.bucket_name
-        self.logger = logging.getLogger("baraky.storage.minio")
 
     def _get_ids_sync(self):
         objects = self.client.list_objects(
@@ -35,7 +36,7 @@ class MinioStorage:
         return await loop.run_in_executor(None, self._get_ids_sync)
 
     def _save_sync(self, estates: List[EstateOverview]):
-        return
+        logger.debug("Saving %d estates", len(estates))
         for estate in tqdm(estates, desc="Saving"):
             json_text = estate.model_dump_json()
             data_stream = io.BytesIO(json_text.encode("utf-8"))
@@ -52,7 +53,7 @@ class MinioStorage:
     def _ensure_bucket(self):
         if not self.client.bucket_exists(self.bucket_name):
             self.client.make_bucket(self.bucket_name)
-            self.logger.info(f"Created bucket {self.bucket_name}")
+            logger.info(f"Created bucket {self.bucket_name}")
 
 
 class FileSystemStorage:

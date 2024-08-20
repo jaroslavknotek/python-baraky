@@ -1,7 +1,6 @@
 from typing import Any
 
-
-from typing import Tuple, Type
+from typing import Tuple, Type, List
 from pydantic import AnyUrl
 from pydantic_settings import (
     BaseSettings,
@@ -46,10 +45,44 @@ class MinioClientSettings(BaseSettings):
     )
     endpoint: str = "localhost:9000"
     bucket_name: str = "estates"
-    access_key: str
-    secret_key: str
+    access_key: str  # loaded from env
+    secret_key: str  # loaded from env
+
+
+class RabbitMQSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="RABBITMQ_", extra="ignore"
+    )
+    endpoint: str = "localhost"
+    username: str  # loaded from env
+    password: str  # loaded from env
 
 
 class CommuteTimeFeatureSettings(BaseSettings):
     model_config = SettingsConfigDict()
     minutes_per_km: int = 2
+
+
+class PIDCommuteFeatureEnhancerSettings:
+    desired_stop: str = "Smíchovské nádraží"
+    stops_path = "all_stops.json"
+
+
+class PIDClientSettings(BaseSettings):
+    url_base: str = "https://pid.cz/wp-admin/admin-ajax.php"
+    query: List = [
+        ["action", "crwsSearch"],
+        ["stop_over", ""],
+        ["time", "08:00"],
+        ["direct", ""],
+        ["maxtransfers", "výchozí"],
+        ["transports[]", "metro"],
+        ["transports[]", "vlak"],
+        ["transports[]", "tram"],
+        ["transports[]", "bus"],
+        ["transports[]", "trolley"],
+        ["transports[]", "privoz"],
+        ["transports[]", "lan"],
+        ["speed", "high"],
+        ["ajax", "true"],
+    ]
