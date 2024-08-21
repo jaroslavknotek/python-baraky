@@ -50,12 +50,13 @@ dependencies = [
   "redis",
   "aiofiles",
   "tqdm",
-  "pika",
   "geopy",
   "minio",
   "numpy<2",
   "scipy",
   "pandas",
+  "python-telegram-bot",
+  "python-telegram-bot[job-queue]",
 ]
 
 # List additional groups of dependencies here (e.g. development

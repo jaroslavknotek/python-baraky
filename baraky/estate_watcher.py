@@ -3,7 +3,7 @@ import asyncio
 import logging
 from tqdm.auto import tqdm
 from typing import Callable
-from baraky.models import EstateOverview
+from baraky.models import EstateOverview, EstateQueueMessage
 
 logger = logging.getLogger("baraky.estate_watcher")
 
@@ -62,7 +62,9 @@ class EstateWatcher:
         filtered = [e for e in estates if self.filter_fn(e)]
         logger.info(f"Found {len(filtered)} new (filtered) estates")
         for estate in filtered:
-            self.output_queue.put(estate)
+            model = EstateQueueMessage.map_from_estate_overview(estate)
+            message = model.model_dump_json()
+            self.output_queue.put(message)
 
     async def enhance_estates(self, estates):
         logger.info(f"Enhancing {len(estates)} estates with features")

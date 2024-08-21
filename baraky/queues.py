@@ -35,21 +35,40 @@ class RabbitQueueProducer(RabbitQueueBase):
     def __init__(self, queue_name: str, settings: RabbitMQSettings | None = None):
         super().__init__(queue_name, settings=settings)
 
-    def put(self, estate_overview: EstateOverview):
-        model = EstateQueueMessage.map_from_estate_overview(estate_overview)
-        message = model.model_dump_json()
+    def put(self, message:str):
 
         self.channel.basic_publish(
             exchange="", routing_key=self.queue_name, body=message
         )
 
-
 class RabbitQueueConsumer(RabbitQueueBase):
     def __init__(self, queue_name: str, settings: RabbitMQSettings | None = None):
         super().__init__(queue_name, settings=settings)
 
-    def listen(self, callback: Callable[[EstateOverview], None]):
+    def listen(self, process_message_callback: Callable[[str], None]):
+        def callback(ch, method, properties, body):
+            process_message_callback(body)
+
         self.channel.basic_consume(
             queue=self.queue_name, on_message_callback=callback, auto_ack=True
         )
         self.channel.start_consuming()
+
+class PoppableRabbitQueue(RabbitQueueConsumer):
+    def __init__(self, queue_name: str, settings: RabbitMQSettings | None = None):
+        super().__init__(queue_name, settings=settings)
+        self.queue = []
+
+    def listen(self):
+        def callback(ch, method, properties, body):
+            self.queue.append(body)
+
+        self.channel.basic_consume(
+            queue=self.queue_name, on_message_callback=callback, auto_ack=True
+        )
+        self.channel.start_consuming()
+
+    def pop(self):
+        if self.queue:
+            return self.queue.pop()
+        return None

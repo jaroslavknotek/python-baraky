@@ -58,6 +58,13 @@ class RabbitMQSettings(BaseSettings):
     password: str  # loaded from env
 
 
+class TelegramBotSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env", env_prefix="TELEGRAM_", extra="ignore"
+    )
+    token:str # loaded from env
+    queue_name:str = "estates_hits"
+
 class CommuteTimeFeatureSettings(BaseSettings):
     model_config = SettingsConfigDict()
     minutes_per_km: int = 2
