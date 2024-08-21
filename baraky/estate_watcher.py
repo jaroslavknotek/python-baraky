@@ -43,10 +43,10 @@ class EstateWatcher:
     async def update(self):
         new_estates = await self._read_new()
         self._notify(new_estates)
-        await self.storage.save(new_estates)
+        await self.storage.save_many(new_estates)
 
     async def _read_new(self):
-        existing_ids = await self.storage.get_ids()
+        existing_ids = await self.storage.list_ids()
         overviews = await self.client.read_all()
         all_ids = {o.id: o for o in overviews}
         new_ids = set(list(all_ids.keys())) - set(existing_ids)
@@ -63,8 +63,7 @@ class EstateWatcher:
         logger.info(f"Found {len(filtered)} new (filtered) estates")
         for estate in filtered:
             model = EstateQueueMessage.map_from_estate_overview(estate)
-            message = model.model_dump_json()
-            self.output_queue.put(message)
+            self.output_queue.put(model)
 
     async def enhance_estates(self, estates):
         logger.info(f"Enhancing {len(estates)} estates with features")

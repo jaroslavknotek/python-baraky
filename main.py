@@ -1,12 +1,11 @@
 import asyncio
 from baraky.estate_features import CommuteTimeFeature, PIDCommuteFeatureEnhancer
 import logging
-from baraky.storages import MinioStorage
+from baraky.storages import EstatesStorage, MinioStorage, EstatesHitQueue
 from baraky.estate_watcher import EstateWatcher
 from baraky.models import EstateOverview, PIDCommuteFeature
 from baraky.client import SrealityEstatesClient
 import argparse
-from baraky.queues import RabbitQueueProducer
 import baraky.io as io
 
 logger = logging.getLogger("baraky")
@@ -55,17 +54,18 @@ async def main():
     locations = await io.read_json(parser.locations_path)
 
     client = SrealityEstatesClient(query_params)
-
-    minio_storage = MinioStorage()
-
+    estates_minio_storage = MinioStorage("estates")
+    storage = EstatesStorage("estate/house/", estates_minio_storage)
+    hits_minio_storage= MinioStorage("hitqueue")
+    queue = EstatesHitQueue("filtered/",hits_minio_storage)
+    
     feature_calculators = {
         "commute_time": CommuteTimeFeature(locations),
         "pid_commute_time": PIDCommuteFeatureEnhancer(),
     }
-    queue = RabbitQueueProducer("estates_hits")
     watcher = EstateWatcher(
         client=client,
-        storage=minio_storage,
+        storage=storage,
         output_queue=queue,
         feature_calculators=feature_calculators,
         filter_fn=filter_fn,

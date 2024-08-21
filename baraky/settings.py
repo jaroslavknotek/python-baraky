@@ -44,7 +44,6 @@ class MinioClientSettings(BaseSettings):
         env_file=".env", env_prefix="MINIO_", extra="ignore"
     )
     endpoint: str = "localhost:9000"
-    bucket_name: str = "estates"
     access_key: str  # loaded from env
     secret_key: str  # loaded from env
 
