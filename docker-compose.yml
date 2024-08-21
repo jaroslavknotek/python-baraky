@@ -16,20 +16,6 @@ services:
       - MINIO_ROOT_PASSWORD=${MINIO_password}
       #      - MINIO_DEFAULT_BUCKETS=estates
     command: server /data --console-address ":9001"
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - '5672:5672'
-      - '15672:15672'
-    networks:
-      - minionetwork
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_username}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_password} 
-    volumes:
-      - type: bind
-        source: /tmp/baraky/rabbitmq
-        target: /var/lib/rabbitmq
 networks:
   minionetwork:
     driver: bridge
