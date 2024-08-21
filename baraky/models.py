@@ -19,12 +19,6 @@ class PIDResponse(BaseModel):
     transfers_count: int
 
 
-class CommuteTimeFeatures(BaseModel):
-    closest_place: str
-    km_to_closest: float
-    minutes_spent: float
-
-
 class EstateOverview(BaseModel, extra="allow"):
     model_config = ConfigDict(extra="allow")
     link: str
@@ -53,7 +47,9 @@ class EstateQueueMessage(BaseModel):
 
     @classmethod
     def map_from_estate_overview(cls, model: EstateOverview):
-        pid_commute_time = model.features.get("pid_commute_time")
+        pid_commute_time: PIDCommuteFeature = model.features.get("pid_commute_time")
+        if pid_commute_time is None:
+            raise ValueError("PID commute time not found")
         return cls(
             link=model.link,
             price=model.price,
@@ -62,6 +58,17 @@ class EstateQueueMessage(BaseModel):
             transfers_count=pid_commute_time.transfers_count,
             station_nearby=pid_commute_time.from_station,
         )
+
+
+class EstateReaction(BaseModel):
+    estate_id: str
+    username: str
+    reaction: str
+
+
+class MinioObject(BaseModel):
+    data: str
+    full_name: str
 
 
 def _extract_id(json_dict: dict) -> str:

@@ -50,7 +50,6 @@ dependencies = [
   "redis",
   "aiofiles",
   "tqdm",
-  "geopy",
   "minio",
   "numpy<2",
   "scipy",

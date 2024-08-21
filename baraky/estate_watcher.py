@@ -55,6 +55,7 @@ class EstateWatcher:
         logger.debug(
             "Found existing: %d new: %d", len(existing_ids), len(new_raw_estates)
         )
+
         await self.enhance_estates(new_raw_estates)
         return new_raw_estates
 

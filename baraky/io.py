@@ -14,5 +14,10 @@ async def read_json(file_path):
         return json.loads(content)
 
 
+def read_json_sync(file_path):
+    with open(file_path, "r") as fp:
+        return json.load(fp)
+
+
 def glob_files(file_path, glob_pattern):
     return file_path.glob(glob_pattern)

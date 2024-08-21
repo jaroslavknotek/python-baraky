@@ -1,6 +1,6 @@
 from typing import Any
 
-from typing import Tuple, Type, List
+from typing import Tuple, Type, List, Dict
 from pydantic import AnyUrl
 from pydantic_settings import (
     BaseSettings,
@@ -61,12 +61,16 @@ class TelegramBotSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_prefix="TELEGRAM_", extra="ignore"
     )
-    token:str # loaded from env
-    queue_name:str = "estates_hits"
-
-class CommuteTimeFeatureSettings(BaseSettings):
-    model_config = SettingsConfigDict()
-    minutes_per_km: int = 2
+    token: str  # loaded from env
+    reactions: Dict[str, str] = {
+        "top": "🏆",
+        "good": "👍",
+        "maybe": "😐",
+        "survivor": "🔧",
+        "nono": "👎",
+        "scam": "💩",
+    }
+    interval_sec: int = 10
 
 
 class PIDCommuteFeatureEnhancerSettings:
