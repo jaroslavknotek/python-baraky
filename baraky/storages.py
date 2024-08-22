@@ -180,7 +180,7 @@ class EstatesStorage:
     def save_many_sync(self, estates: List[EstateOverview]):
         logger.debug("Saving %d estates", len(estates))
         prefix = self.object_prefix.rstrip("/")
-        for estate in tqdm(estates, desc="Saving"):
+        for estate in estates:
             json_text = estate.model_dump_json()
             object_name = f"{prefix}/{estate.id}.json"
             self.storage.save_sync(object_name, json_text)

@@ -70,7 +70,7 @@ class TelegramBotSettings(BaseSettings):
         "nono": "👎",
         "scam": "💩",
     }
-    interval_sec: int = 10
+    interval_sec: int = 60
 
 
 class PIDCommuteFeatureEnhancerSettings:

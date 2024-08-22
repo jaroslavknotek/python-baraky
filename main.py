@@ -18,6 +18,7 @@ logger = logging.getLogger("baraky")
 logging.basicConfig(level=logging.INFO)
 logger.setLevel(logging.DEBUG)
 
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 def main():
     args = setup_args()

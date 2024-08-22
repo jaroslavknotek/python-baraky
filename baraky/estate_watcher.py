@@ -61,15 +61,19 @@ class EstateWatcher:
 
     def _notify(self, estates):
         filtered = [e for e in estates if self.filter_fn(e)]
-        logger.info(f"Found {len(filtered)} new (filtered) estates")
+        logger.debug(f"Found {len(filtered)} new (filtered) estates")
         for estate in filtered:
             model = EstateQueueMessage.map_from_estate_overview(estate)
             self.output_queue.put(model)
 
     async def enhance_estates(self, estates):
         logger.info(f"Enhancing {len(estates)} estates with features")
-
-        estates_it = tqdm(estates, desc="Enhancing estates", disable=self.tqdm_disabled)
+        
+        estates_it = tqdm(
+            estates, 
+            desc="Enhancing estates",
+            disable=self.tqdm_disabled or len(estates)==0,
+            )
         for estate in estates_it:
             for name, calculator in self.feature_calculators.items():
                 if name == "pid_commute_time":

@@ -62,8 +62,8 @@ class SrealityEstatesClient:
                 tasks.append(task)
 
             page_dicts = await asyncio.gather(*tasks, return_exceptions=True)
-
         page_dicts.insert(0, page_1)
+        page_dicts = [p for p in page_dicts if p is not None]
         dicts_list = [parse_query_result_page(p) for p in page_dicts]
         records = sum(dicts_list, [])
         return self._map_to_model(records)
@@ -124,12 +124,12 @@ async def _request_json(session, url, method="get", headers={}) -> Dict | None:
     async with session.request(method, url, headers=headers) as resp:
         try:
             resp.raise_for_status()
+            return await resp.json()
         except aiohttp.ClientResponseError as e:
-            logger.error(
-                "Failed to get %s with status %s error %s", url, resp.status, e
+            logger.exception(
+                "Failed to get %s with status %s error", url, resp.status
             )
             return None
-        return await resp.json()
 
 
 def _to_query_string(query_params):
