@@ -36,32 +36,37 @@ class SrealityEstatesClient:
         self.headers = headers
 
     async def read_all(self) -> List[EstateOverview]:
-        async with aiohttp.ClientSession() as session:
-            page_1 = await self._read_page(
-                session,
-                self.query_params,
-                page=1,
-                per_page=self.per_page,
-                headers=self.headers,
-            )
-            if page_1 is None:
-                logger.warning("Failed to get first page of the query")
-                return []
-            result_size = page_1["result_size"]
-            pages_total = math.ceil(result_size / self.per_page) + 1
-            tasks = []
-            for page in range(2, pages_total):
-                if page is None:
-                    continue
-                task = self._read_page(
+        try:
+            async with aiohttp.ClientSession() as session:
+                page_1 = await self._read_page(
                     session,
                     self.query_params,
-                    page=page,
+                    page=1,
                     per_page=self.per_page,
+                    headers=self.headers,
                 )
-                tasks.append(task)
+                if page_1 is None:
+                    logger.warning("Failed to get first page of the query")
+                    return []
+                result_size = page_1["result_size"]
+                pages_total = math.ceil(result_size / self.per_page) + 1
+                tasks = []
+                for page in range(2, pages_total):
+                    if page is None:
+                        continue
+                    task = self._read_page(
+                        session,
+                        self.query_params,
+                        page=page,
+                        per_page=self.per_page,
+                    )
+                    tasks.append(task)
 
-            page_dicts = await asyncio.gather(*tasks, return_exceptions=True)
+                page_dicts = await asyncio.gather(*tasks, return_exceptions=True)
+        except aiohttp.ClientConnectionError:
+            logger.exception("Failed to connect to the server")
+            return []
+
         page_dicts.insert(0, page_1)
         page_dicts = [p for p in page_dicts if p is not None]
         dicts_list = [parse_query_result_page(p) for p in page_dicts]
@@ -125,10 +130,8 @@ async def _request_json(session, url, method="get", headers={}) -> Dict | None:
         try:
             resp.raise_for_status()
             return await resp.json()
-        except aiohttp.ClientResponseError as e:
-            logger.exception(
-                "Failed to get %s with status %s error", url, resp.status
-            )
+        except aiohttp.ClientResponseError:
+            logger.exception("Failed to get %s with status %s error", url, resp.status)
             return None
 
 

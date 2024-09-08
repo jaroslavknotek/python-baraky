@@ -14,11 +14,16 @@ from baraky.client import SrealityEstatesClient
 import argparse
 import baraky.io as io
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+
 logger = logging.getLogger("baraky")
-logging.basicConfig(level=logging.INFO)
 logger.setLevel(logging.DEBUG)
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
+
 
 def main():
     args = setup_args()
@@ -82,8 +87,8 @@ def _filter_close_to_prague(
     if commute_time.time_minutes is None or commute_time.transfers_count is None:
         return False
     is_close = commute_time.time_minutes <= 75
-    max_1_transfer = commute_time.transfers_count <= 1
-    return max_1_transfer and is_close and estate_overview.price < 10_000_000
+    max_1_transfer = commute_time.transfers_count <= 2
+    return max_1_transfer and is_close and estate_overview.price <= 12_000_000
 
 
 def filter_fn(estate_overview: EstateOverview) -> bool:

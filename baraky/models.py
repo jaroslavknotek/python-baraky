@@ -12,11 +12,13 @@ class PIDCommuteFeature(BaseModel):
     from_station: str
     to_station: str
     gps_stop_distance: float
+    path_info: str | None
 
 
 class PIDResponse(BaseModel):
     time_minutes: int
     transfers_count: int
+    path_info: str
 
 
 class EstateOverview(BaseModel, extra="allow"):
@@ -56,7 +58,8 @@ class EstateQueueMessage(BaseModel):
             id=model.id,
             pid_commute_time_min=pid_commute_time.time_minutes,
             transfers_count=pid_commute_time.transfers_count,
-            station_nearby=pid_commute_time.from_station,
+            # station_nearby=pid_commute_time.from_station,
+            station_nearby=pid_commute_time.path_info or "",
         )
 
 

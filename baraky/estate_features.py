@@ -44,17 +44,27 @@ class PIDClient:
 
         if resp is None or len(resp.get("data", [])) == 0:
             return None
-        routes = [d for d in resp["data"]]
-        routes_mins = [to_min(r) for r in routes]
+        routes_data = [d for d in resp["data"]]
+        routes_mins = [to_min(r) for r in routes_data]
         min_idx = np.argmin(routes_mins)
+        min_routes = routes_data[min_idx]
 
-        transfers_str = routes[min_idx]["transfers"].split()[0]
+        transfers_str = min_routes["transfers"].split()[0]
         transfers = 0
         if not transfers_str.startswith("bez"):
             transfers = int(transfers_str)
-
+        route_list = min_routes["route"]
+        path_pieces = [
+            (r["displayStation"], r["destinationStation"], r["class"])
+            for r in route_list
+        ]
+        path_lines = [f"{f}->{t} ({c})" for f, t, c in path_pieces]
+        path_info = "\n".join(path_lines[: transfers + 1])
         mins = routes_mins[min_idx]
-        return PIDResponse(time_minutes=mins, transfers_count=transfers)
+
+        return PIDResponse(
+            time_minutes=mins, transfers_count=transfers, path_info=path_info
+        )
 
 
 class PIDCommuteFeatureEnhancer:
@@ -95,6 +105,7 @@ class PIDCommuteFeatureEnhancer:
                 from_station=found_stop,
                 to_station=self.desired_stop,
                 gps_stop_distance=distance,
+                path_info=None,
             )
         else:
             return PIDCommuteFeature(
@@ -103,6 +114,7 @@ class PIDCommuteFeatureEnhancer:
                 from_station=found_stop,
                 to_station=self.desired_stop,
                 gps_stop_distance=distance,
+                path_info=resp.path_info,
             )
 
 

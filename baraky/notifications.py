@@ -50,10 +50,10 @@ class TelegramNotificationsBot:
                 parse_estate_id_from_uri(link), self.settings.reactions
             )
             commute_min = estate.pid_commute_time_min
-            station = estate.station_nearby
+            path = estate.station_nearby
             transfers = estate.transfers_count
             base_message_text = (
-                f"{link}\n{commute_min=:.0f}. From:{station}({transfers=})"
+                f"{link}\n{commute_min=:.0f}.\n*Path*:{path}\n{transfers=}"
             )
             await context.bot.send_message(
                 chat_id=chat_id, text=base_message_text, reply_markup=buttons

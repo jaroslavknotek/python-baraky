@@ -68,12 +68,12 @@ class EstateWatcher:
 
     async def enhance_estates(self, estates):
         logger.info(f"Enhancing {len(estates)} estates with features")
-        
+
         estates_it = tqdm(
-            estates, 
+            estates,
             desc="Enhancing estates",
-            disable=self.tqdm_disabled or len(estates)==0,
-            )
+            disable=self.tqdm_disabled or len(estates) == 0,
+        )
         for estate in estates_it:
             for name, calculator in self.feature_calculators.items():
                 if name == "pid_commute_time":

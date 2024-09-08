@@ -9,7 +9,6 @@ from baraky.models import (
     MinioObject,
 )
 from typing import List, Tuple
-from tqdm.auto import tqdm
 import logging
 from minio import Minio
 from minio.datatypes import Object
@@ -129,7 +128,6 @@ class EstatesHitQueue:
         prefix = self.object_prefix.rstrip("/")
         object_name = f"{prefix}/{min_id}.json"
         data = self.storage.get_sync(object_name)
-        print(data)
         return min_id, EstateQueueMessage.model_validate_json(data)
 
     def delete(self, object_id):
