@@ -107,12 +107,18 @@ class TelegramNotificationsBot:
 
         query = update.callback_query
         await query.answer()
-        link, msg_text = query.message.text.split("\n")[:2]
+
+        parts = query.message.text.split("\n")
+        link = parts[0]
+
+        estate_id = parse_estate_id_from_uri(link)
+        existing_reactions = self.reactions_storage.read_by_estate(estate_id)
+        # filter out text from existing reactions
+        msg_text = "\n".join(parts[1 : len(parts) - len(existing_reactions)])
 
         reaction, link_id = query.data.split("_")
         user = query.from_user.username
 
-        estate_id = parse_estate_id_from_uri(link)
         estate_reaction = EstateReaction(
             estate_id=estate_id,
             username=user,
