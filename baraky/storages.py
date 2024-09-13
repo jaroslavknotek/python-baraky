@@ -68,11 +68,11 @@ class MinioStorage:
 
     def get_sync(self, object_name: str) -> str | None:
         self._ensure_bucket()
-        logger.debug(
-            "Getting object %s from bucket %s",
-            object_name,
-            self.bucket_name,
-        )
+        # logger.debug(
+        #     "Getting object %s from bucket %s",
+        #     object_name,
+        #     self.bucket_name,
+        # )
         response = self.client.get_object(self.bucket_name, object_name)
         try:
             return response.data.decode()
@@ -174,6 +174,13 @@ class EstatesStorage:
     async def list_ids(self):
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self.list_ids_sync)
+
+    async def get_all(self):
+        all_estates = self.storage.get_objects(self.object_prefix)
+
+        return [
+            EstateOverview.model_validate_json(estate.data) for estate in all_estates
+        ]
 
     def save_many_sync(self, estates: List[EstateOverview]):
         logger.debug("Saving %d estates", len(estates))

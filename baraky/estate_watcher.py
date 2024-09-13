@@ -41,23 +41,30 @@ class EstateWatcher:
                 break
 
     async def update(self):
+        logger.info("Running update cycle")
         new_estates = await self._read_new()
         self._notify(new_estates)
         await self.storage.save_many(new_estates)
 
     async def _read_new(self):
-        existing_ids = await self.storage.list_ids()
+        stored_estates_list = await self.storage.get_all()
         overviews = await self.client.read_all()
-        all_ids = {o.id: o for o in overviews}
-        new_ids = set(list(all_ids.keys())) - set(existing_ids)
-        new_raw_estates = [all_ids[id] for id in new_ids]
+
+        stored_estates = {e.id: e for e in stored_estates_list}
+
+        new_or_updated = []
+
+        for received_estate in overviews:
+            stored = stored_estates.get(received_estate.id)
+            if stored is None or stored.price != received_estate.price:
+                new_or_updated.append(received_estate)
 
         logger.debug(
-            "Found existing: %d new: %d", len(existing_ids), len(new_raw_estates)
+            "Found existing: %d new: %d", len(stored_estates), len(new_or_updated)
         )
 
-        await self.enhance_estates(new_raw_estates)
-        return new_raw_estates
+        await self.enhance_estates(new_or_updated)
+        return new_or_updated
 
     def _notify(self, estates):
         filtered = [e for e in estates if self.filter_fn(e)]
