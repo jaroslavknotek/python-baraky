@@ -87,8 +87,8 @@ def _filter_close_to_prague(
     if commute_time.time_minutes is None or commute_time.transfers_count is None:
         return False
     is_close = commute_time.time_minutes <= 75
-    max_1_transfer = commute_time.transfers_count <= 2
-    return max_1_transfer and is_close and estate_overview.price <= 12_000_000
+    max_1_transfer = commute_time.transfers_count <= 4
+    return max_1_transfer and is_close and estate_overview.price <= 8_000_000
 
 
 def filter_fn(estate_overview: EstateOverview) -> bool:
