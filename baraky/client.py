@@ -11,21 +11,21 @@ from pydantic import ValidationError
 
 logger = logging.getLogger("baraky.client")
 
-
 class SrealityEstatesClient:
     def __init__(
         self,
         query_params,
         headers: Dict = {},
         base_url: str | None = None,
-        detail_url: str | None = None,
+        detail_url_template_house: str | None = None,
+        detail_url_template_flat: str | None = None,
     ):
         defaults = settings.SrealityClientSettings(
-            base_url=base_url,
-            detail_url=detail_url,
+            base_url=base_url
         )
         self.base_url = defaults.base_url
-        self.detail_url = defaults.detail_url
+        self.detail_url_template_flat = detail_url_template_flat or defaults.detail_url_template_flat
+        self.detail_url_template_house =  detail_url_template_house or defaults.detail_url_template_house
         self.per_page = defaults.per_page
         self.query_params = query_params
         if "User-Agent" not in headers:
@@ -34,6 +34,7 @@ class SrealityEstatesClient:
                 "Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0"
             )
         self.headers = headers
+
 
     async def read_all(self) -> List[EstateOverview]:
         try:
@@ -71,42 +72,33 @@ class SrealityEstatesClient:
         page_dicts = [p for p in page_dicts if p is not None]
         dicts_list = [parse_query_result_page(p) for p in page_dicts]
         records = sum(dicts_list, [])
+        
         return self._map_to_model(records)
 
     def _map_to_model(self, records):
         valid = []
         for record in records:
+            record_type = _parse_type(record)
             try:
-                estate_overview = EstateOverview.from_record(
-                    record,
-                    self.detail_url,
-                )
+                match record_type:
+                    case "house":
+                        estate_overview = EstateOverview.parse_house(
+                            record,
+                            self.detail_url_template_house,
+                        )
+                    case "flat":
+                        estate_overview = EstateOverview.parse_flat(
+                            record,
+                            self.detail_url_template_flat,
+                        )
+                    case _:
+                        raise ValueError("Encountered unknown listing case")
                 valid.append(estate_overview)
             except ValidationError:
                 logger.exception("Failed to validate estate %s", record)
+                
+            
         return valid
-
-    # async def detail(self, id: int) -> dict:
-    #     """
-    #     Detail of the estate
-    #
-    #     :param id: id of the estate
-    #     :return: estate dict
-    #     """
-    #     async with aiohttp.ClientSession() as session:
-    #         return await self._detail_with_session(session, id)
-    #
-    # async def details(self, ids: List[int]) -> List[dict]:
-    #     """
-    #     Details of the estates. This is a batch version of the detail method.
-    #     It is faster then calling detail multiple times.
-    #
-    #     :param ids: list of ids
-    #     :return: list of estates
-    #     """
-    #     async with aiohttp.ClientSession() as session:
-    #         tasks = [self._detail_with_session(session, id) or id in ids]
-    #         return await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _detail_with_session(self, session, id: int) -> Dict:
         url = format_url(self.base_url, f"estates/{id}")
@@ -150,3 +142,18 @@ def page_query(query_params, page, per_page):
 
 def parse_query_result_page(page_dict: dict) -> List[dict]:
     return page_dict.get("_embedded", {}).get("estates", [])
+
+
+def _parse_type(record):
+    name = record['name']
+    name_parts = name.split()
+    if len(name_parts) < 3 or name_parts[0].lower() != "prodej":
+        raise ValueError(f"Unexpected listing title: {name}.")
+    
+    if name_parts[1].lower() == "bytu":
+        return "flat"
+    
+    elif name_parts[1].lower() == "rodinného" and name_parts[2].lower() == "domu" and len(name_parts)>3:
+        return "house"
+    else:
+        return "unknown"

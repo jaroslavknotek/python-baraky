@@ -47,7 +47,7 @@ class EstateWatcher:
         await self.storage.save_many(new_estates)
 
     async def _read_new(self):
-        stored_estates_list = await self.storage.get_all()
+        stored_estates_list = self.storage.get_all()
         overviews = await self.client.read_all()
 
         stored_estates = {e.id: e for e in stored_estates_list}

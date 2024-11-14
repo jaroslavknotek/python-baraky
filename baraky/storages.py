@@ -36,6 +36,7 @@ class MinioStorage:
         return self.client.list_objects(
             self.bucket_name,
             prefix=prefix,
+            recursive=True,
         )
 
     def get_objects(self, prefix: str) -> List[MinioObject]:
@@ -175,7 +176,7 @@ class EstatesStorage:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self.list_ids_sync)
 
-    async def get_all(self):
+    def get_all(self):
         all_estates = self.storage.get_objects(self.object_prefix)
 
         return [
@@ -187,7 +188,7 @@ class EstatesStorage:
         prefix = self.object_prefix.rstrip("/")
         for estate in estates:
             json_text = estate.model_dump_json()
-            object_name = f"{prefix}/{estate.id}.json"
+            object_name = f"{prefix}/{estate.type}/{estate.id}.json"
             self.storage.save_sync(object_name, json_text)
 
     async def save_many(self, estates: List[EstateOverview]):

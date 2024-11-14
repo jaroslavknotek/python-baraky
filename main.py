@@ -81,28 +81,44 @@ def notifier_command(args):
     bot.start()
 
 
-def _filter_close_to_prague(
+def _filter_house_close_to_prague(
     estate_overview: EstateOverview, commute_time: PIDCommuteFeature
 ) -> bool:
+    if estate_overview.type != "house":
+        return False
     if commute_time.time_minutes is None or commute_time.transfers_count is None:
         return False
     is_close = commute_time.time_minutes <= 75
     max_1_transfer = commute_time.transfers_count <= 4
     return max_1_transfer and is_close and estate_overview.price <= 8_000_000
 
+def _filter_flat_close_to_prague(
+    estate_overview: EstateOverview, commute_time: PIDCommuteFeature
+) -> bool:
+    if estate_overview.type != "flat":
+        return False
+    if commute_time.time_minutes is None or commute_time.transfers_count is None:
+        return False
+    is_close = commute_time.time_minutes <= 55
+    max_transfer = commute_time.transfers_count <= 4
+    return max_transfer and is_close and estate_overview.price <= 6_500_000
+
 
 def filter_fn(estate_overview: EstateOverview) -> bool:
     commute_time = estate_overview.features.get("pid_commute_time")
     if commute_time is None:
         return False
-    return _filter_close_to_prague(estate_overview, commute_time)
+    is_close_house = _filter_house_close_to_prague(estate_overview, commute_time)
+    is_close_flat = _filter_flat_close_to_prague(estate_overview, commute_time)
+    
+    return is_close_house or is_close_flat
 
 
 def setup_watcher(args):
     query_params = io.read_json_sync(args.query_path)
     client = SrealityEstatesClient(query_params)
     estates_minio_storage = MinioStorage("estates")
-    storage = EstatesStorage("estate/house/", estates_minio_storage)
+    storage = EstatesStorage("estate/", estates_minio_storage)
     hits_minio_storage = MinioStorage("hitqueue")
     queue = EstatesHitQueue("filtered/", hits_minio_storage)
 
