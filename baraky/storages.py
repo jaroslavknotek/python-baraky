@@ -62,8 +62,11 @@ class MinioStorage:
         values_as_bytes = object_body.encode("utf-8")
         data_stream = io.BytesIO(values_as_bytes)
         length = len(values_as_bytes)
-
-        self.client.put_object(
+        
+        # make sure that the object is gone. I cannot find any information
+        # aboout whether object being put overwrite 
+        self.remove_sync(object_name)
+        _ = self.client.put_object(
             self.bucket_name, object_name, data_stream, length, content_type
         )
 
@@ -89,11 +92,11 @@ class MinioStorage:
             response.release_conn()
 
     def remove_sync(self, object_name: str):
-        logger.debug(
-            "Removing object %s from bucket %s",
-            object_name,
-            self.bucket_name,
-        )
+        # logger.debug(
+        #    "Removing object %s from bucket %s",
+        #    object_name,
+        #    self.bucket_name,
+        # )
         self._ensure_bucket()
         self.client.remove_object(self.bucket_name, object_name)
 
