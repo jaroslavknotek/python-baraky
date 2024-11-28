@@ -92,6 +92,7 @@ def _filter_house_close_to_prague(
     max_1_transfer = commute_time.transfers_count <= 4
     return max_1_transfer and is_close and estate_overview.price <= 8_000_000
 
+
 def _filter_flat_close_to_prague(
     estate_overview: EstateOverview, commute_time: PIDCommuteFeature
 ) -> bool:
@@ -110,7 +111,7 @@ def filter_fn(estate_overview: EstateOverview) -> bool:
         return False
     is_close_house = _filter_house_close_to_prague(estate_overview, commute_time)
     is_close_flat = _filter_flat_close_to_prague(estate_overview, commute_time)
-    
+
     return is_close_house or is_close_flat
 
 

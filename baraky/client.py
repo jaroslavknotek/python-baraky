@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 logger = logging.getLogger("baraky.client")
 
+
 class SrealityEstatesClient:
     def __init__(
         self,
@@ -20,12 +21,14 @@ class SrealityEstatesClient:
         detail_url_template_house: str | None = None,
         detail_url_template_flat: str | None = None,
     ):
-        defaults = settings.SrealityClientSettings(
-            base_url=base_url
-        )
+        defaults = settings.SrealityClientSettings(base_url=base_url)
         self.base_url = defaults.base_url
-        self.detail_url_template_flat = detail_url_template_flat or defaults.detail_url_template_flat
-        self.detail_url_template_house =  detail_url_template_house or defaults.detail_url_template_house
+        self.detail_url_template_flat = (
+            detail_url_template_flat or defaults.detail_url_template_flat
+        )
+        self.detail_url_template_house = (
+            detail_url_template_house or defaults.detail_url_template_house
+        )
         self.per_page = defaults.per_page
         self.query_params = query_params
         if "User-Agent" not in headers:
@@ -34,7 +37,6 @@ class SrealityEstatesClient:
                 "Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0"
             )
         self.headers = headers
-
 
     async def read_all(self) -> List[EstateOverview]:
         try:
@@ -72,7 +74,7 @@ class SrealityEstatesClient:
         page_dicts = [p for p in page_dicts if p is not None]
         dicts_list = [parse_query_result_page(p) for p in page_dicts]
         records = sum(dicts_list, [])
-        
+
         return self._map_to_model(records)
 
     def _map_to_model(self, records):
@@ -96,8 +98,7 @@ class SrealityEstatesClient:
                 valid.append(estate_overview)
             except ValidationError:
                 logger.exception("Failed to validate estate %s", record)
-                
-            
+
         return valid
 
     async def _detail_with_session(self, session, id: int) -> Dict:
@@ -145,15 +146,19 @@ def parse_query_result_page(page_dict: dict) -> List[dict]:
 
 
 def _parse_type(record):
-    name = record['name']
+    name = record["name"]
     name_parts = name.split()
     if len(name_parts) < 3 or name_parts[0].lower() != "prodej":
         raise ValueError(f"Unexpected listing title: {name}.")
-    
+
     if name_parts[1].lower() == "bytu":
         return "flat"
-    
-    elif name_parts[1].lower() == "rodinného" and name_parts[2].lower() == "domu" and len(name_parts)>3:
+
+    elif (
+        name_parts[1].lower() == "rodinného"
+        and name_parts[2].lower() == "domu"
+        and len(name_parts) > 3
+    ):
         return "house"
     else:
         return "unknown"

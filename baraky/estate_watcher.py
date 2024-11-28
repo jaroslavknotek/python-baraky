@@ -58,10 +58,12 @@ class EstateWatcher:
             stored = stored_estates.get(received_estate.id)
             stored_price = stored.price if stored is not None else None
             # sometimes it seems that sreality gives two version of the same ID
-            # with different prices. 
+            # with different prices.
             if stored_price is None or stored_price > received_estate.price:
                 new_or_updated.append(received_estate)
-                logger.debug(f"Estate:{received_estate.id} stored vs received: {stored_price}-{received_estate.price}")
+                logger.debug(
+                    f"Estate:{received_estate.id} stored vs received: {stored_price}-{received_estate.price}"
+                )
 
         logger.debug(
             "Found existing: %d new: %d", len(stored_estates), len(new_or_updated)

@@ -36,29 +36,27 @@ class EstateOverview(BaseModel, extra="allow"):
         return cls(
             link=_extract_house_link(record, detail_url),
             price=_extract_price(record),
-            type='house',
+            type="house",
             id=_extract_id(record),
             gps=_extract_gps(record),
         )
 
     @classmethod
     def parse_flat(cls, record: dict, detail_url: str):
-        
         return cls(
             link=_extract_flat_link(record, detail_url),
             price=_extract_price(record),
-            type='flat',
+            type="flat",
             id=_extract_id(record),
             gps=_extract_gps(record),
         )
-    
 
 
 class EstateQueueMessage(BaseModel):
     link: str
     price: int
     id: str
-    type: str|None
+    type: str | None
     pid_commute_time_min: int
     transfers_count: int
     station_nearby: str
@@ -72,7 +70,7 @@ class EstateQueueMessage(BaseModel):
             link=model.link,
             price=model.price,
             id=model.id,
-            type = model.type,
+            type=model.type,
             pid_commute_time_min=pid_commute_time.time_minutes,
             transfers_count=pid_commute_time.transfers_count,
             # station_nearby=pid_commute_time.from_station,
@@ -104,16 +102,17 @@ def _extract_house_link(json_dict: dict, house_url_template: str) -> str:
         id=estate_id,
     )
 
+
 def _extract_flat_link(json_dict: dict, flat_url_template: str) -> str:
     seo = json_dict["seo"]["locality"]
     estate_id = _extract_id(json_dict)
 
-    name = json_dict['name']
+    name = json_dict["name"]
     name_parts = name.split()
     disposition = name_parts[2]
-    
+
     return flat_url_template.format(
-        disposition = disposition,
+        disposition=disposition,
         seo=seo.strip("/"),
         id=estate_id.strip("/"),
     )
