@@ -43,11 +43,11 @@ class EstateWatcher:
     async def update(self):
         logger.info("Running update cycle")
         new_estates = await self._read_new()
-        self._notify(new_estates)
         await self.storage.save_many(new_estates)
+        self._notify(new_estates)
 
     async def _read_new(self):
-        stored_estates_list = await self.storage.get_all()
+        stored_estates_list = self.storage.get_all()
         overviews = await self.client.read_all()
 
         stored_estates = {e.id: e for e in stored_estates_list}
@@ -56,8 +56,14 @@ class EstateWatcher:
 
         for received_estate in overviews:
             stored = stored_estates.get(received_estate.id)
-            if stored is None or stored.price != received_estate.price:
+            stored_price = stored.price if stored is not None else None
+            # sometimes it seems that sreality gives two version of the same ID
+            # with different prices.
+            if stored_price is None or stored_price > received_estate.price:
                 new_or_updated.append(received_estate)
+                logger.debug(
+                    f"Estate:{received_estate.id} stored vs received: {stored_price}-{received_estate.price}"
+                )
 
         logger.debug(
             "Found existing: %d new: %d", len(stored_estates), len(new_or_updated)
@@ -68,7 +74,8 @@ class EstateWatcher:
 
     def _notify(self, estates):
         filtered = [e for e in estates if self.filter_fn(e)]
-        logger.debug(f"Found {len(filtered)} new (filtered) estates")
+        filtered_ids = [e.id for e in filtered]
+        logger.debug(f"Found {len(filtered)} new (filtered) estates: {filtered_ids}")
         for estate in filtered:
             model = EstateQueueMessage.map_from_estate_overview(estate)
             self.output_queue.put(model)

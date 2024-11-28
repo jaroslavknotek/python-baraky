@@ -36,6 +36,7 @@ class MinioStorage:
         return self.client.list_objects(
             self.bucket_name,
             prefix=prefix,
+            recursive=True,
         )
 
     def get_objects(self, prefix: str) -> List[MinioObject]:
@@ -62,7 +63,10 @@ class MinioStorage:
         data_stream = io.BytesIO(values_as_bytes)
         length = len(values_as_bytes)
 
-        self.client.put_object(
+        # make sure that the object is gone. I cannot find any information
+        # aboout whether object being put overwrite
+        self.remove_sync(object_name)
+        _ = self.client.put_object(
             self.bucket_name, object_name, data_stream, length, content_type
         )
 
@@ -88,11 +92,11 @@ class MinioStorage:
             response.release_conn()
 
     def remove_sync(self, object_name: str):
-        logger.debug(
-            "Removing object %s from bucket %s",
-            object_name,
-            self.bucket_name,
-        )
+        # logger.debug(
+        #    "Removing object %s from bucket %s",
+        #    object_name,
+        #    self.bucket_name,
+        # )
         self._ensure_bucket()
         self.client.remove_object(self.bucket_name, object_name)
 
@@ -175,7 +179,7 @@ class EstatesStorage:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self.list_ids_sync)
 
-    async def get_all(self):
+    def get_all(self):
         all_estates = self.storage.get_objects(self.object_prefix)
 
         return [
@@ -187,7 +191,7 @@ class EstatesStorage:
         prefix = self.object_prefix.rstrip("/")
         for estate in estates:
             json_text = estate.model_dump_json()
-            object_name = f"{prefix}/{estate.id}.json"
+            object_name = f"{prefix}/{estate.type}/{estate.id}.json"
             self.storage.save_sync(object_name, json_text)
 
     async def save_many(self, estates: List[EstateOverview]):

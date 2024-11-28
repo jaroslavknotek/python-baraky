@@ -1,4 +1,40 @@
 services:
+  notifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      #    volumes:
+      # - .:/app
+    network_mode: "host"
+    environment:
+      - APP_ENV=development
+      - APP_DEBUG=true    
+    command: ["python", "main.py", "notifier"]
+
+  watcher_flats:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      #    volumes:
+      # - .:/app
+    network_mode: "host"
+    environment:
+      - APP_ENV=development
+      - APP_DEBUG=true    
+    command: ["python", "main.py", "watcher", "--query-path", "query_params_flats.json"]
+
+  watcher_houses:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      #    volumes:
+      # - .:/app
+    network_mode: "host"
+    environment:
+      - APP_ENV=development
+      - APP_DEBUG=true    
+    command: ["python", "main.py", "watcher", "--query-path", "query_params.json"]
+
   minio:
     image: docker.io/minio/minio:latest
     ports:
